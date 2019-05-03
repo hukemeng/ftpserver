@@ -1,0 +1,19 @@
+{
+	"ftp_addr": "127.0.0.1",
+	"ftp_port": "8090",
+	"ftp_data_port": "8089",
+	"ftp_data_timeout": 30,
+	"user": [
+		{
+			"name": "root",
+			"pass": "root",
+			"root": "/home/Ftptest",
+			"get": true,
+			"put": true,
+			"delete": true,
+			"recover": false,
+			"mkdir": false,
+			"deldir": false
+ 		}
+	]
+}
