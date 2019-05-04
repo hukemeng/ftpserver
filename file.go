@@ -116,8 +116,8 @@ func commandRetr(info []byte, driver FileDriver, require FileRequire) error {
 	}
 
 	if !require.CheckAuth(GET) {
-		return require.Response(
-			"530 Parameter denied\r\n")
+		Debugln(require.GetUserName() + " Has No Permisson To Get File.")
+		return require.Response("530 Permission denied\r\n")
 	}
 
 	var path string
@@ -164,9 +164,8 @@ func commandStor(info []byte, driver FileDriver, require FileRequire) error {
 	}
 
 	if !require.CheckAuth(PUT) {
-		Debugln("Has No Permisson To Put File.")
-		return require.Response(
-			"530 Parameter denied\r\n")
+		Debugln(require.GetUserName() + " Has No Permisson To Put File.")
+		return require.Response("530 Permission denied\r\n")
 	}
 
 	var path string
@@ -180,12 +179,13 @@ func commandStor(info []byte, driver FileDriver, require FileRequire) error {
 	/* the file has been exist */
 	if err == nil {
 		if !require.CheckAuth(RECOVER) {
+			Debugln(require.GetUserName() + " Has No Permisson To Recover File.")
 			return require.Response("530 Permission deny.The same file already exists\r\n")
 		}
 
 		/* delete the file*/
 		if err := os.Remove(path); err != nil {
-			Debugln("Recover File " + path + "from" +  require.GetUserName())
+			Debugln("Recover File " + path + "from" + require.GetUserName())
 			return require.Response(
 				"451 Abort the operation of the request,there are local errors\r\n")
 		}
@@ -211,20 +211,19 @@ func commandStor(info []byte, driver FileDriver, require FileRequire) error {
 	}
 	require.DataClose()
 
-	Debugln("Receive File " + path + "from" +  require.GetUserName())
+	Debugln("Receive File " + path + " from " + require.GetUserName())
 	return require.Response(
 		"226 Close the data connection, the requested file operation is successful\r\n")
 }
 
 func commandDele(info []byte, driver FileDriver, require FileRequire) error {
 	if len(info) == 0 {
-		return require.Response(
-			"501 Parameter syntax error.Please input file name\r\n")
+		return require.Response("501 Parameter syntax error.Please input file name\r\n")
 	}
 
 	if !require.CheckAuth(DELETE) {
-		return require.Response(
-			"530 Parameter denied\r\n")
+		Debugln(require.GetUserName() + " Has No Permisson To Delete File.")
+		return require.Response("530 Parameter denied\r\n")
 	}
 
 	var path string
@@ -243,7 +242,7 @@ func commandDele(info []byte, driver FileDriver, require FileRequire) error {
 			return require.Response(
 				"451 Abort the operation of the request,there are local errors\r\n")
 		} else {
-			Debugln("Delete File " + path + "from" +  require.GetUserName())
+			Debugln("Delete File " + path + "from" + require.GetUserName())
 			return require.Response(
 				"250 Requested File Operation Completed\r\n")
 		}
