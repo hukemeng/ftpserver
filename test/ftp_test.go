@@ -84,18 +84,12 @@ func clean_test_environment(t *testing.T) {
 
 func create_pasv_conn(t *testing.T, user string, pass string) (net.Conn, net.Conn) {
 
-	var check_err = func(err error) {
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
-
 	var ctl, err = net.Dial("tcp4", Conf.Ftp_addr+":"+Conf.Ftp_port)
-	check_err(err)
+	check_err(err, t)
 
 	_, err = ctl.Write([]byte(
 		"USER " + user + "\r\nPASS " + pass + "\r\nPASV\r\n"))
-	check_err(err)
+	check_err(err, t)
 
 	var pasv string
 
@@ -131,7 +125,7 @@ func create_pasv_conn(t *testing.T, user string, pass string) (net.Conn, net.Con
 
 	var port = strconv.Itoa(port1*256 + port2)
 	data, err := net.Dial("tcp4", "127.0.0.1:"+port)
-	check_err(err)
+	check_err(err, t)
 
 	return ctl, data
 }

@@ -1,7 +1,7 @@
 package ftpserver
 
 import (
-	"bufio"
+	"errors"
 	"io"
 	"log"
 	"net"
@@ -12,33 +12,44 @@ type Ftp struct {
 	*Entry
 	*DataConn
 	*File
-	ctl *net.TCPConn
-}
-
-func (ftp *Ftp) welcome() error {
-	_, err := ftp.ctl.Write([]byte("220 HKM FTP Server Ready\r\n"))
-	return err
-}
-
-func (ftp *Ftp) Response(msg string) error {
-	_, err := ftp.ctl.Write([]byte(msg))
-	return err
+	*Controller
 }
 
 func newFtp(conn *net.TCPConn) *Ftp {
 	return &Ftp{
-		User:     NewUser(),
-		Entry:    new(Entry),
-		DataConn: NewDataConn(),
-		File:     new(File),
-		ctl:      conn,
+		User:       NewUser(),
+		Entry:      new(Entry),
+		DataConn:   NewDataConn(),
+		File:       new(File),
+		Controller: NewControler(conn),
 	}
 }
 
-func exitFtp(ftp *Ftp) {
-	if err := ftp.ctl.Close(); err != nil {
-		Warnln(err)
+type cmdFn func(string, []byte, *Ftp) error
+
+var cmdModules = make(map[string]cmdFn)
+
+var normalExit = errors.New("Normal Exit.")
+
+func register(command string, fn cmdFn) {
+	if _, ok := cmdModules[command]; ok {
+		Fataln("Repeated registration：", command)
 	}
+	cmdModules[command] = fn
+}
+
+func PerformHandle(ftp *Ftp, command string, info []byte) error {
+	//Debugln(command, ":", string(info))
+	if fn, ok := cmdModules[command]; ok {
+		return fn(command, info, ftp)
+	}
+	if command == "QUIT" {
+		return normalExit
+	}
+	if command == "TYPE" {
+		return ftp.Response("220 Binary\r\n")
+	}
+	return ftp.Response("502 Command not implemented\r\n")
 }
 
 func decode(msg []byte) (string, []byte) {
@@ -59,7 +70,7 @@ func decode(msg []byte) (string, []byte) {
 }
 
 func ftpPerform(ftp *Ftp) {
-	var reader = bufio.NewReader(ftp.ctl)
+	var reader = ftp.Reader()
 	for {
 		msg, _, err := reader.ReadLine()
 		if err != nil {
@@ -79,7 +90,7 @@ func ftpPerform(ftp *Ftp) {
 			break
 		}
 	}
-	exitFtp(ftp)
+	ftp.ExitControl()
 }
 
 func Start() {
@@ -97,11 +108,11 @@ func Start() {
 			log.Fatalln(err)
 		}
 
-		//log.Println("accept control connection.", conn.RemoteAddr())
+		//Debugln("accept control connection from ", conn.RemoteAddr())
 
 		var ftp = newFtp(conn.(*net.TCPConn))
-		if ftp.welcome() != nil {
-			exitFtp(ftp)
+		if ftp.Welcome() != nil {
+			ftp.ExitControl()
 			continue
 		}
 

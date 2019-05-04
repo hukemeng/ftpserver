@@ -1,30 +1,43 @@
 package ftpserver
 
-import "github.com/pkg/errors"
+import (
+	"bufio"
+	"net"
+)
 
-type cmdFn func(string, []byte, *Ftp) error
-
-var cmdModules = make(map[string]cmdFn)
-
-var normalExit = errors.New("Normal Exit.")
-
-func register(command string, fn cmdFn) {
-	if _, ok := cmdModules[command]; ok {
-		Fataln("Repeated registration：", command)
-	}
-	cmdModules[command] = fn
+type CtrlDriver interface {
+	Welcome() error
+	Response(string) error
+	ExitControl()
+	Reader() *bufio.Reader
 }
 
-func PerformHandle(ftp *Ftp, command string, info []byte) error {
-	//Debugln(command, ":", string(info))
-	if fn, ok := cmdModules[command]; ok {
-		return fn(command, info, ftp)
+type Controller struct {
+	ctrl *net.TCPConn
+}
+
+func (ctrl *Controller) Welcome() error {
+	_, err := ctrl.ctrl.Write([]byte("220 HKM FTP Server Ready\r\n"))
+	return err
+}
+
+func (ctrl *Controller) Response(msg string) error {
+	_, err := ctrl.ctrl.Write([]byte(msg))
+	return err
+}
+
+func (ctrl *Controller) ExitControl() {
+	if err := ctrl.ctrl.Close(); err != nil {
+		Warnln(err)
 	}
-	if command == "QUIT" {
-		return normalExit
+}
+
+func (ctrl *Controller) Reader() *bufio.Reader {
+	return bufio.NewReader(ctrl.ctrl)
+}
+
+func NewControler(conn *net.TCPConn) *Controller {
+	return &Controller{
+		ctrl: conn,
 	}
-	if command == "TYPE" {
-		return ftp.Response("220 Binary\r\n")
-	}
-	return ftp.Response("502 Command not implemented\r\n")
 }
