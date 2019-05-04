@@ -6,42 +6,9 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
-	"runtime"
 	"strings"
 	"time"
 )
-
-func println(caller int, prefix string, v ...interface{}) {
-	fn, _, line, ok := runtime.Caller(caller)
-	if !ok {
-		log.Println("Unkown Error: Get runtime Caller Error.\n"+
-			"Target print:", v)
-	}
-
-	var logprefix = fmt.Sprintf(
-		"%s FUNC:%s LINE:%d", prefix, runtime.FuncForPC(fn).Name(), line)
-
-	log.Println(logprefix, v)
-}
-
-func Warnln(v ...interface{}) {
-	println(2, "[WARN]", v...)
-}
-
-var Fataln = log.Fatalln
-
-func Debugln(v ...interface{}) {
-	println(2, "[DEBUG]", v...)
-}
-
-func Ignore(v ...interface{}) {
-}
-
-func Assert(status bool) {
-	if !status {
-		Fataln()
-	}
-}
 
 var (
 	errGetPathStat  = errors.New("Error: Can't get file stat.")
