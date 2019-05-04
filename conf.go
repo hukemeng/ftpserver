@@ -61,7 +61,7 @@ func Load_config(path string) {
 }
 
 func init() {
-	const conf_file = "/Users/hukemeng/Go/src/ftpserver/conf.json"
+	const conf_file = "/Users/shangli/Go/src/ftpserver/conf.json"
 	Load_config(conf_file)
 
 }

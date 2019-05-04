@@ -1,7 +1,7 @@
 package test
 
 import (
-	. "ftpserver2"
+	. "ftpserver"
 	"testing"
 )
 

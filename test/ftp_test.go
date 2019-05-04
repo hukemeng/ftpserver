@@ -15,7 +15,7 @@ import (
 	"testing"
 	"time"
 
-	. "ftpserver2"
+	. "ftpserver"
 )
 
 const default_test_path = "/home/FtpTest"
@@ -314,8 +314,8 @@ func Test_Transfer(t *testing.T) {
 
 	for i := 0; i < second; i++ {
 		for j := 0; j < speed; j++ {
-			go download(t, "root", "root", strconv.Itoa(i*speed+j))
 			wg.Add(1)
+			go download(t, "root", "root", strconv.Itoa(i*speed+j))
 		}
 
 		time.Sleep(time.Second)
@@ -324,8 +324,8 @@ func Test_Transfer(t *testing.T) {
 
 	for i := 0; i < second; i++ {
 		for j := 0; j < speed; j++ {
-			go upload(t, "root", "root", strconv.Itoa(i*speed+j))
 			wg.Add(1)
+			go upload(t, "root", "root", strconv.Itoa(i*speed+j))
 		}
 
 		time.Sleep(time.Second)
