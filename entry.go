@@ -235,10 +235,10 @@ func commandMkr(info []byte, dirver EntryDriver, require EntryRequire) error {
 		return require.Response("530 Parameter denied\r\n")
 	}
 
-	if strings.Contains(string(info), "/") {
+	if strings.Contains(string(info), "../") {
 		/* for security. Preventive use "../" Return to the upper directory.*/
 		return require.Response("550 The operation that did not execute." +
-			"Only support relative path\r\n")
+			"Including \"../\" is not supported\r\n")
 	}
 
 	var dirName = dirver.GetCurDir() + string(info)

@@ -205,7 +205,7 @@ func commandStor(info []byte, driver FileDriver, require FileRequire) error {
 
 	require.WaitDataConn()
 	if err := driver.Recvfile(path, require); err != nil {
-		Ignore(os.Remove(path))
+		_ = os.Remove(path)
 		Warnln("Write file Failed", err)
 		return require.Response("451 Abort the operation." + err.Error())
 	}

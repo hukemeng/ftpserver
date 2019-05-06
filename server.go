@@ -145,6 +145,3 @@ var Fataln = log.Fatalln
 func Debugln(v ...interface{}) {
 	println(2, "[DEBUG]", v...)
 }
-
-func Ignore(v ...interface{}) {
-}
