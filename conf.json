@@ -12,7 +12,7 @@
 			"put": true,
 			"delete": true,
 			"recover": false,
-			"mkdir": false,
+			"mkdir": true,
 			"deldir": false
  		}
 	]

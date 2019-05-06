@@ -61,3 +61,9 @@ func Test_Recover(t *testing.T) {
 	permissonCheck(t, "STOR download.bin\r\n")
 	Conf.Users[0].Recover = true
 }
+
+func Test_Mkdr(t *testing.T) {
+	Conf.Users[0].MkDir = false
+	permissonCheck(t, "MKD testMkdir\r\n")
+	Conf.Users[0].MkDir = true
+}

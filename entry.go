@@ -38,6 +38,7 @@ type EntryRequire interface {
 	WaitDataConn()
 	WriteAll([]byte) error
 	DataClose()
+	CheckAuth(uint) bool
 }
 
 type Entry struct {
@@ -84,6 +85,8 @@ func (entry *Entry) EnterEntry(folder string) error {
 		entry.curPath = entry.rootPath + "/"
 		return nil
 	}
+
+	//Debugln("EnterEntry folder.", folder)
 
 	/* return the parent dir */
 	if folder == ".." {
@@ -158,8 +161,9 @@ func commandCwd(info []byte, driver EntryDriver, require EntryRequire) error {
 			return require.Response(
 				"501 Parameter syntax error.Please Input correct folder path.")
 		} else if err == errNonDirPath {
-			var resMsg = fmt.
-				Sprintf("501 Parameter syntax error.%s is not a dictionary\r\n", string(info))
+			var resMsg = fmt.Sprintf(
+					"501 Parameter syntax error.%s is not a dictionary\r\n",
+					string(info))
 			return require.Response(resMsg)
 		} else if err == errGetPathStat {
 			return require.Response("451 Has unknown local Error\r\n")
@@ -218,6 +222,42 @@ func commandPwd(info []byte, driver EntryDriver, require EntryRequire) error {
 		fmt.Sprintf("257 %s\r\n", driver.GetPwd()))
 }
 
+func commandMkr(info []byte, dirver EntryDriver, require EntryRequire) error {
+	if len(info) == 0 {
+		return require.Response("501 Parameter syntax error." +
+			"Please input dictionary name\r\n")
+	} else if len(info) > 64 {
+		return require.Response("550 The operation that did not execute." +
+			"Dictionary name too long\r\n")
+	}
+
+	if !require.CheckAuth(MKDIR) {
+		return require.Response("530 Parameter denied\r\n")
+	}
+
+	if strings.Contains(string(info), "/") {
+		/* for security. Preventive use "../" Return to the upper directory.*/
+		return require.Response("550 The operation that did not execute." +
+			"Only support relative path\r\n")
+	}
+
+	var dirName = dirver.GetCurDir() + string(info)
+	if err := isValidDir(dirName); err == nil || err == errNonDirPath{
+		return require.Response("550 The operation that did not execute." +
+			"The dictionary has been exist\r\n")
+	} else if err == errGetPathStat {
+		return require.Response("451 Abort the operation of the request\r\n")
+	}
+
+	if err := os.Mkdir(dirName, os.ModePerm); err != nil {
+		Warnln(err)
+		return require.Response("451 Abort the operation of the request\r\n")
+	} else {
+		Debugln("Create Dictionary " + dirName)
+		return require.Response("257 Create dictionary succeed\r\n")
+	}
+}
+
 func DirProc(command string, info []byte, ftp *Ftp) error {
 
 	if command == "CDUP" {
@@ -228,6 +268,8 @@ func DirProc(command string, info []byte, ftp *Ftp) error {
 		return commandList(info, ftp, ftp)
 	} else if command == "PWD" {
 		return commandPwd(info, ftp, ftp)
+	} else if command == "MKD" {
+		return commandMkr(info, ftp, ftp)
 	}
 	Fataln()
 	return nil
@@ -238,4 +280,5 @@ func init() {
 	register("CWD", DirProc)
 	register("LIST", DirProc)
 	register("PWD", DirProc)
+	register("MKD", DirProc)
 }

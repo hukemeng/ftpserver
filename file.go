@@ -185,7 +185,7 @@ func commandStor(info []byte, driver FileDriver, require FileRequire) error {
 
 		/* delete the file*/
 		if err := os.Remove(path); err != nil {
-			Debugln("Recover File " + path + "from" + require.GetUserName())
+			Debugln("Recover File " + path + " from " + require.GetUserName())
 			return require.Response(
 				"451 Abort the operation of the request,there are local errors\r\n")
 		}
