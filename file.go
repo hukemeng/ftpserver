@@ -242,7 +242,7 @@ func commandDele(info []byte, driver FileDriver, require FileRequire) error {
 			return require.Response(
 				"451 Abort the operation of the request,there are local errors\r\n")
 		} else {
-			Debugln("Delete File " + path + "from" + require.GetUserName())
+			Debugln("Delete File " + path + " from " + require.GetUserName())
 			return require.Response(
 				"250 Requested File Operation Completed\r\n")
 		}

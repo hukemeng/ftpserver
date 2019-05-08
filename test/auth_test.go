@@ -4,6 +4,7 @@ import (
 	. "ftpserver"
 	"strconv"
 	"testing"
+	"time"
 )
 
 func getStatus(t *testing.T, buf []byte) int {
@@ -16,11 +17,12 @@ func getStatus(t *testing.T, buf []byte) int {
 	return ret
 }
 
-func permissonCheck(t *testing.T, command string) {
+func authCheck(t *testing.T, command string, status int) {
 	create_test_environment(t)
 	defer clean_test_environment(t)
 
-	ctl, _ := create_port_conn(t, "root", "root")
+	ctl := create_control(t, "root", "root")
+	time.Sleep(time.Second)
 
 	/* read all control channel data */
 	var buf = make([]byte, 2048)
@@ -33,37 +35,50 @@ func permissonCheck(t *testing.T, command string) {
 	n, err = ctl.Read(buf)
 	check_err(err, t)
 
-	if getStatus(t, buf[:n]) != 530 {
-		t.Fatal(string(buf[:n]), command)
+	if getStatus(t, buf[:n]) != status {
+		t.Fatal(string(buf[:n]), command, status)
 	}
 }
 
 func Test_Get(t *testing.T) {
 	Conf.Users[0].Get = false
-	permissonCheck(t, "RETR test\r\n")
+	authCheck(t, "RETR test\r\n", 530)
 	Conf.Users[0].Get = true
 }
 
-func Test_put(t *testing.T) {
+func Test_Put(t *testing.T) {
 	Conf.Users[0].Put = false
-	permissonCheck(t, "STOR test\r\n")
+	authCheck(t, "STOR test\r\n", 530)
 	Conf.Users[0].Put = true
 }
 
 func Test_Del(t *testing.T) {
 	Conf.Users[0].Delete = false
-	permissonCheck(t, "DELE download.bin\r\n")
+	authCheck(t, "DELE download.bin\r\n", 530)
 	Conf.Users[0].Delete = true
 }
 
 func Test_Recover(t *testing.T) {
 	Conf.Users[0].Recover = false
-	permissonCheck(t, "STOR download.bin\r\n")
+	authCheck(t, "STOR download.bin\r\n", 530)
 	Conf.Users[0].Recover = true
 }
 
 func Test_Mkdr(t *testing.T) {
 	Conf.Users[0].MkDir = false
-	permissonCheck(t, "MKD testMkdir\r\n")
+	authCheck(t, "MKD testMkdir\r\n", 530)
 	Conf.Users[0].MkDir = true
+
+	authCheck(t, "MKD testMkdir\r\n", 257)
+}
+
+func Test_DelDir(t *testing.T) {
+	Conf.Users[0].DelDir = false
+	authCheck(t, "RMD testMkdir\r\n", 530)
+	Conf.Users[0].DelDir = true
+
+	Conf.Users[0].MkDir = true
+	authCheck(t, "MKD testMkdir\r\n", 257)
+
+	authCheck(t, "RMD testMkdir\r\n", 250)
 }

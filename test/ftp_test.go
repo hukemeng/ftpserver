@@ -82,13 +82,21 @@ func clean_test_environment(t *testing.T) {
 	}
 }
 
-func create_pasv_conn(t *testing.T, user string, pass string) (net.Conn, net.Conn) {
-
+func create_control(t *testing.T, user string, pass string) net.Conn {
 	var ctl, err = net.Dial("tcp4", Conf.Ftp_addr+":"+Conf.Ftp_port)
 	check_err(err, t)
 
 	_, err = ctl.Write([]byte(
-		"USER " + user + "\r\nPASS " + pass + "\r\nPASV\r\n"))
+		"USER " + user + "\r\nPASS " + pass + "\r\n"))
+	check_err(err, t)
+	return ctl
+}
+
+func create_pasv_conn(t *testing.T, user string, pass string) (net.Conn, net.Conn) {
+
+	var ctl = create_control(t, user, pass)
+
+	_, err := ctl.Write([]byte("PASV\r\n"))
 	check_err(err, t)
 
 	var pasv string
@@ -131,31 +139,24 @@ func create_pasv_conn(t *testing.T, user string, pass string) (net.Conn, net.Con
 }
 
 func create_port_conn(t *testing.T, user string, pass string) (net.Conn, net.Conn) {
-	var check_err = func(err error) {
-		if err != nil {
-			t.Fatal(err)
-		}
-	}
 
-	var ctl, err = net.Dial("tcp4", Conf.Ftp_addr+":"+Conf.Ftp_port)
-	check_err(err)
+	var ctl = create_control(t, user, pass)
 
 	port_lis, err := net.Listen("tcp4", "127.0.0.1:0")
-	check_err(err)
+	check_err(err, t)
 
 	var ip = port_lis.Addr().(*net.TCPAddr).IP
 	var port = port_lis.Addr().(*net.TCPAddr).Port
 
-	var encode_port = fmt.Sprintf("%d,%d,%d,%d,%d,%d\r\n",
+	var encode_port = fmt.Sprintf("%d,%d,%d,%d,%d,%d",
 		ip[0], ip[1], ip[2], ip[3],
 		(port&0xFF00)>>8, (port & 0x00FF))
 
-	_, err = ctl.Write([]byte(
-		"USER " + user + "\r\nPASS " + pass + "\r\nPORT " + encode_port + "\r\n"))
-	check_err(err)
+	_, err = ctl.Write([]byte("PORT " + encode_port + "\r\n"))
+	check_err(err, t)
 
 	data, err := port_lis.Accept()
-	check_err(err)
+	check_err(err, t)
 
 	return ctl, data
 }
@@ -325,6 +326,8 @@ func Test_Transfer(t *testing.T) {
 		time.Sleep(time.Second)
 	}
 	wg.Wait()
+	/* for recover */
+	//upload(t, "root", "root", "1")
 }
 
 func init() {

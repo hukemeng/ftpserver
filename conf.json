@@ -13,7 +13,7 @@
 			"delete": true,
 			"recover": false,
 			"mkdir": true,
-			"deldir": false
+			"deldir": true
  		}
 	]
 }

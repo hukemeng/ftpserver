@@ -2,10 +2,10 @@ package ftpserver
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net"
-	"fmt"
 	"runtime"
 )
 
@@ -42,6 +42,10 @@ func register(command string, fn cmdFn) {
 
 func PerformHandle(ftp *Ftp, command string, info []byte) error {
 	//Debugln(command, ":", string(info))
+	if command == "" {
+		return nil
+	}
+
 	if fn, ok := cmdModules[command]; ok {
 		return fn(command, info, ftp)
 	}
@@ -51,6 +55,7 @@ func PerformHandle(ftp *Ftp, command string, info []byte) error {
 	if command == "TYPE" {
 		return ftp.Response("220 Binary\r\n")
 	}
+	Debugln("command " + command + " has no implemented")
 	return ftp.Response("502 Command not implemented\r\n")
 }
 
